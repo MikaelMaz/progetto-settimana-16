@@ -36,14 +36,12 @@ session_start();
             <h1 class="h3 mb-3 fw-normal">Accedi</h1>
 
             <div class="form-floating">
-                <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="email"
-                    value="m.rossi@example.com" />
+                <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="email" />
                 <label for="floatingInput">Email</label>
             </div>
             <div class="form-floating">
-                <input type="password" class="form-control" id="floatingPassword" placeholder="Password" name="password"
-                    value="Pa$$w0rd!" />
-                <label for="floatingPassword">Password</label>
+                <input type="password" class="form-control" id="floatingPassword" placeholder="Password" name="password"/>
+                <label for="floatingPassword">Password</label> 
             </div>
 
             <!--<div class="form-check text-start my-3">
@@ -66,5 +64,4 @@ session_start();
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
 </body>
-
 </html>

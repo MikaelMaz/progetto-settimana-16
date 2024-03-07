@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once('db.php');
 require_once('db_pdo.php');
 require_once('user.php');
@@ -10,75 +11,75 @@ $PDOConn = DB::getInstance($config);
 $conn = $PDOConn->getConnection();
 
 $userDTO = new UserDTO($conn);
-$res = $userDTO->getAll();
 
-$isadmin = isset($_REQUEST['isadmin']) ? 1 : 0;
+// Controllo se l'utente ha effettuato il login
+if (isset($_SESSION['userLogin'])) {
+    // Controllo se l'utente è un admin
+    if ($_SESSION['userLogin']['isadmin'] == 1) {
 
-if (isset($_REQUEST['firstname'])) {
-    $firstname = $_REQUEST['firstname'];
-    $lastname = $_REQUEST['lastname'];
-    $email = $_REQUEST['email'];
-    $password = $_REQUEST['password'];
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            if (isset($_POST['firstname'])) {
+                $firstname = $_POST['firstname'];
+                $lastname = $_POST['lastname'];
+                $email = $_POST['email'];
+                $password = $_POST['password'];
+                $isadmin = isset($_POST['isadmin']) ? 1 : 0; // Utilizza il checkbox di creazione
 
-    $res = $userDTO->saveUser([
-        'firstname' => $firstname,
-        'lastname' => $lastname,
-        'email' => $email,
-        'password' => $password,
-        'isadmin' => $isadmin
-    ]);
+                // Salva un nuovo utente
+                $res = $userDTO->saveUser([
+                    'firstname' => $firstname,
+                    'lastname' => $lastname,
+                    'email' => $email,
+                    'password' => $password,
+                    'isadmin' => $isadmin
+                ]);
+                header("Location: index.php");
+                exit();
+            }
+        }
 
-    header("Location: index.php");
-    exit();
-}
+        // Funzione per eliminare un utente
+        if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
+            $delete_id = $_GET['delete_id'];
+            $deletedRows = $userDTO->deleteUser($delete_id);
+            header("Location: index.php");
+            exit();
+        }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['firstname'])) {
-        $firstname = $_POST['firstname'];
-        $lastname = $_POST['lastname'];
-        $email = $_POST['email'];
-        $password = $_POST['password'];
-        $isadmin = isset($_POST['adminUp']) ? $_POST['adminUp'] : 0;
+        // Funzione per aggiornare un utente
+        if (isset($_REQUEST['id']) && $_REQUEST['action'] == 'update') {
+            $id = intval($_REQUEST['id']);
+            // Recupera i dati dell'utente dalla richiesta POST
+            $firstname = $_POST['firstnameUp'];
+            $lastname = $_POST['lastnameUp'];
+            $email = $_POST['emailUp'];
+            $password = $_POST['passwordUp'];
+            $isadmin = isset($_POST['adminUp']) ? $_POST['adminUp'] : 0; // Utilizza il checkbox di modifica
 
-        $res = $userDTO->saveUser([
-            'firstname' => $firstname,
-            'lastname' => $lastname,
-            'email' => $email,
-            'password' => $password,
-            'isadmin' => $isadmin
-        ]);
+            // Aggiorna l'utente
+            $res = $userDTO->updateUser([
+                'id' => $id,
+                'firstname' => $firstname,
+                'lastname' => $lastname,
+                'email' => $email,
+                'password' => $password,
+                'isadmin' => $isadmin
+            ]);
+
+            header('Location: index.php');
+            exit;
+        }
+        
+        // Ottieni tutti gli utenti
+        $res = $userDTO->getAll();
+    } else {
+        header('Location: UserIndex.php');
+        exit;
     }
-}
-
-// Funzione per eliminare un utente
-if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
-    $delete_id = $_GET['delete_id'];
-    $deletedRows = $userDTO->deleteUser($delete_id);
-    header("Location: index.php");
-    exit();
-}
-
-if (isset($_REQUEST['id']) && $_REQUEST['action'] == 'update') {
-    $id = intval($_REQUEST['id']);
-    // Recupera i dati dell'utente dalla richiesta POST
-    $firstname = $_POST['firstnameUp'];
-    $lastname = $_POST['lastnameUp'];
-    $email = $_POST['emailUp'];
-    $password = $_POST['passwordUp'];
-    $isadmin = isset($_POST['adminUp']) ? $_POST['adminUp'] : 0;
-
-    $res = $userDTO->updateUser([
-        'id' => $id,
-        'firstname' => $firstname,
-        'lastname' => $lastname,
-        'email' => $email,
-        'password' => $password,
-        'isadmin' => $isadmin
-    ]);
-
-    header('Location: index.php');
-    exit;
-}
+    } else {
+        header("Location: login.php");
+        exit;
+    } 
 ?>
 
 <!doctype html>
@@ -104,12 +105,8 @@ if (isset($_REQUEST['id']) && $_REQUEST['action'] == 'update') {
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarScroll">
-                <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    </li>
                     <div>
-                        <button class="btn btn-danger" type="logout">Esci</button>
+                    <a href="exit.php" class="btn btn-danger" type="logout">Esci</a>
                     </div>
             </div>
         </div>
@@ -207,11 +204,11 @@ if (isset($_REQUEST['id']) && $_REQUEST['action'] == 'update') {
                                                     value="<?= $record["password"] ?>">
                                             </div>
                                             <div class="mb-3 d-flex align-items-center">
-                                                <label for="isadmin" class="form-label me-3">Admin</label>
+                                                <label for="adminUp" class="form-label me-3">Admin</label>
                                                 <div class="form-check form-switch form-check-lg">
-                                                    <input name="adminUp" type="checkbox" class="form-check-input" id="isadmin"
-                                                        aria-describedby="isadmin" value="<?= $record["isadmin"] ?>">
-                                                    <label class="form-check-label" for="isadmin"></label>
+                                                    <input name="adminUp" type="checkbox" class="form-check-input" id="adminUp_<?= $record["id"] ?>"
+                                                        aria-describedby="adminUp" value="1" <?= $record["isadmin"] == 1 ? 'checked' : '' ?>>
+                                                    <label class="form-check-label" for="adminUp"></label>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
